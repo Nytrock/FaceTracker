@@ -4,6 +4,32 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.python.data import AUTOTUNE
 
+
+class Augment(tf.keras.layers.Layer):
+    def __init__(self, seed=42):
+        super().__init__()
+
+        self.flip_inputs = tf.keras.layers.RandomFlip(mode='horizontal', seed=seed)
+        self.flip_labels = tf.keras.layers.RandomFlip(mode='horizontal', seed=seed)
+        self.brightness = tf.keras.layers.RandomBrightness(factor=0.1, value_range=(0.0, 1.0), seed=seed)
+        self.contrast = tf.keras.layers.RandomContrast(factor=0.1, seed=seed)
+
+    def flip_aug(self, images, masks):
+        images = self.flip_inputs(images)
+        masks = self.flip_labels(masks)
+        return images, masks
+
+    def color_aug(self, images):
+        images = self.brightness(images)
+        images = self.contrast(images)
+        images = tf.clip_by_value(images, 0.0, 1.0)
+        return images
+
+    def call(self, inputs, labels):
+        inputs, labels = self.flip_aug(inputs, labels)
+        inputs = self.color_aug(inputs)
+        return inputs, labels
+
 def display_dataset_example(display_list):
     plt.figure(figsize=(15, 15))
 
@@ -37,8 +63,8 @@ def get_datasets(image_size, batch_size, use_mine_annotations=False):
     if use_mine_annotations:
         masks_dir = '../dataset/main/annotations_mine'
 
-    image_files = tf.data.Dataset.list_files(os.path.join(images_dir, "*.png"), shuffle=False)
-    mask_files = tf.data.Dataset.list_files(os.path.join(masks_dir, "*.png"), shuffle=False)
+    image_files = tf.data.Dataset.list_files(os.path.join(images_dir, '*.png'), shuffle=False)
+    mask_files = tf.data.Dataset.list_files(os.path.join(masks_dir, '*.png'), shuffle=False)
     dataset_size = len(image_files)
 
     dataset = tf.data.Dataset.zip((image_files, mask_files))
@@ -48,7 +74,15 @@ def get_datasets(image_size, batch_size, use_mine_annotations=False):
     train_dataset = dataset.take(train_size)
     validation_dataset = dataset.skip(train_size)
 
-    train_dataset = train_dataset.cache().shuffle(1000).batch(batch_size).prefetch(buffer_size=AUTOTUNE)
-    validation_dataset = validation_dataset.batch(batch_size)
+    train_dataset = (train_dataset
+                     .cache()
+                     .shuffle(1000)
+                     .batch(batch_size)
+                     .map(Augment(), num_parallel_calls=AUTOTUNE)
+                     .prefetch(buffer_size=AUTOTUNE))
+
+    validation_dataset = (validation_dataset
+                          .batch(batch_size)
+                          .prefetch(buffer_size=AUTOTUNE))
 
     return train_dataset, validation_dataset
