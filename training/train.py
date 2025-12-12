@@ -1,11 +1,11 @@
-from dataset_creator import get_datasets
+from .dataset_creator import get_datasets
 from training.model_creator import create_model
 from tensorflow import keras
 
 img_size = 224
 seed = 123
 batch_size = 20
-epochs = 25
+epochs = 40
 
 classes_orig = ['BACKGROUND', 'PERSON', 'SKIN', 'LEFT BROW', 'RIGHT_BROW', 'LEFT_EYE', 'RIGHT_EYE', 'LIPS', 'TEETH']
 classes_mine = ['BACKGROUND', 'PERSON', 'SKIN', 'BROW', 'EYE', 'LIPS', 'TEETH']
