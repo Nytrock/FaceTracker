@@ -4,6 +4,7 @@ import numpy as np
 from fastapi import FastAPI, Response, File, UploadFile
 from scipy.ndimage import gaussian_filter
 from tensorflow.keras.models import load_model
+from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import cv2
 from PIL import Image
@@ -12,6 +13,18 @@ import io
 from training.train import img_size
 
 app = FastAPI()
+origins = [
+    'http://localhost:5115',
+    'https://face-tracker-ml.vercel.app/'
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 model_path = 'model.keras'
 colormap = {
     0: (0, 0, 0),
@@ -53,9 +66,18 @@ def get_mask(image):
     return mask
 
 
-@app.post('/api/mask')
-async def mask(file: UploadFile = File(...)):
-    image_raw = await file.read()
+@app.post('/api/mask',
+    summary='Сырая маска',
+    description='Возвращает сырую маску сегментации лица',
+    responses={
+        200: {
+            'content': {'image/png': {}},
+            'description': 'Изображение после обработки'
+        }
+    }
+)
+async def mask(image: UploadFile):
+    image_raw = await image.read()
     image = Image.open(io.BytesIO(image_raw)).convert('RGB')
 
     mask = np.array(get_mask(image))
@@ -73,9 +95,19 @@ async def mask(file: UploadFile = File(...)):
     return Response(content=out_bytes.read(), media_type='image/png')
 
 
-@app.post('/api/background')
-async def background(file: UploadFile = File(...)):
-    image_raw = await file.read()
+@app.post(
+    '/api/background',
+    summary='Удалить фон',
+    description='Удаляет задний фон переданного изображения, оставляя только человека',
+    responses={
+        200: {
+            'content': {'image/png': {}},
+            'description': 'Изображение после обработки'
+        }
+    }
+)
+async def background(image: UploadFile = File(...)):
+    image_raw = await image.read()
     image = Image.open(io.BytesIO(image_raw)).convert('RGB')
 
     mask = np.array(get_mask(image))
@@ -94,9 +126,18 @@ async def background(file: UploadFile = File(...)):
     return Response(content=out_bytes.read(), media_type='image/png')
 
 
-@app.post('/api/teeth')
-async def eyes(file: UploadFile = File(...)):
-    image_raw = await file.read()
+@app.post('/api/teeth',
+    summary='Отбелить зубы',
+    description='Получает изображение лица и отбеливает у него зубы',
+    responses={
+        200: {
+            'content': {'image/png': {}},
+            'description': 'Изображение после обработки'
+        }
+    }
+)
+async def eyes(image: UploadFile = File(...)):
+    image_raw = await image.read()
     image = Image.open(io.BytesIO(image_raw)).convert('RGB')
     mask = np.array(get_mask(image)).squeeze()
 

@@ -25,7 +25,7 @@ def create_model(num_classes, image_size):
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=(image_size, image_size, 3),
         include_top=False,
-        weights="imagenet"
+        weights='imagenet'
     )
 
     layer_names = [

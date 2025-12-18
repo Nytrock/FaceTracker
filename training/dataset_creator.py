@@ -30,6 +30,7 @@ class Augment(tf.keras.layers.Layer):
         inputs = self.color_aug(inputs)
         return inputs, labels
 
+
 def display_dataset_example(display_list):
     plt.figure(figsize=(15, 15))
 

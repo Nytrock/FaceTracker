@@ -1,4 +1,3 @@
-from .dataset_creator import get_datasets
 from training.model_creator import create_model
 from tensorflow import keras
 
@@ -11,6 +10,8 @@ classes_orig = ['BACKGROUND', 'PERSON', 'SKIN', 'LEFT BROW', 'RIGHT_BROW', 'LEFT
 classes_mine = ['BACKGROUND', 'PERSON', 'SKIN', 'BROW', 'EYE', 'LIPS', 'TEETH']
 
 if __name__ == '__main__':
+    from dataset_creator import get_datasets
+
     train_ds, val_ds = get_datasets(img_size, batch_size)
     model = create_model(len(classes_orig), img_size)
 
