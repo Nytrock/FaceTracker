@@ -13,16 +13,12 @@ import io
 from training.train import img_size
 
 app = FastAPI()
-origins = [
-    'http://localhost:5115',
-    'https://face-tracker-ml.vercel.app/'
-]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=['*'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 model_path = 'model.keras'
